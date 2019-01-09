@@ -136,7 +136,8 @@ def solution_is_valid(df_students, df_limits, gruops_overlaps):
 def final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps):
     if solution_is_valid(df_students, df_limits, gruops_overlaps):
         print('cost: ', 1 / (1 + max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])))
-        return max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])
+        return max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award)
+                    - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])
     else:
         print('cost2: ', 2)
         return -0.5
@@ -167,7 +168,8 @@ def cost_function(df_students, df_limits, df_requests, minmax_penalty, student_a
     return cost_function_
 
 
-def clean_df_requests(df_requests, df_students, gruops_overlaps):
+def clean_df_requests(df_requests, df_limits):
+    '''
     dict_new_group_student = dict()
     dict_old_group_student = dict()
     for _, student in df_students.iterrows():
@@ -185,7 +187,26 @@ def clean_df_requests(df_requests, df_students, gruops_overlaps):
             if request['student_id'] in dict_new_group_student.get(overlaping_group, []):
                 if True:
                     pass
+    '''
+    group_limit_dict = dict()
+    for _, group in df_limits.iterrows():
+        group_limit_dict[group['group_id']] = (group['students_cnt'], group['max'], group['max_preferred'])
 
+    change = 1
+    to_delete = []
+    for i, request in df_requests.iterrows():
+        try:
+            group = group_limit_dict[request['req_group_id']]
+            count = change + group[0]
+            if count > group[1] and group[1] != group[2]:
+                to_delete.append(i)
+        except KeyError:
+            print(request['req_group_id'])
+
+    print(len(to_delete))
+    print(len(df_requests))
+    df_requests = df_requests.drop(to_delete)
+    print(len(df_requests))
 
 
 def main():
@@ -209,8 +230,10 @@ def main():
             gruops_overlaps[overlap['group1_id']] = set()
         gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
 
-    clean_df_requests(df_requests, df_students, gruops_overlaps)
+    clean_df_requests(df_requests, df_limits)
 
+    print('starting score: ', score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award)
+                    - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty))
     print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
     #change_df_student(df_students, df_requests, 'all')
