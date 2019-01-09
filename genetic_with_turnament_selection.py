@@ -1,4 +1,4 @@
-from genetski_algoritam_binarne_funkcije import *
+from genetic_algorithm_functions import *
 
 #vraca indekse sudionika
 def izaberi_sudionike(velicina_populacije, k):

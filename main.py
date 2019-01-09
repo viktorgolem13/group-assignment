@@ -1,8 +1,7 @@
-import pandas as pd 
-import numpy as np
-from genetski_heuristicke import *
-from troturnirski_heuristika import *
-from time import time
+import pandas as pd
+#  from genetic_agorithm import *
+from genetic_with_turnament_selection import *
+
 
 def score_A(df_students):
     score = 0
@@ -11,6 +10,7 @@ def score_A(df_students):
             score += student['swap_weight']
 
     return score
+
 
 def score_B(df_students, award_activity):
     students_swaped = dict()
@@ -30,6 +30,7 @@ def score_B(df_students, award_activity):
 
     return score
 
+
 def score_C(df_students, student_award):
     students_not_swaped = set()
     diff_students = set()
@@ -40,6 +41,7 @@ def score_C(df_students, student_award):
 
     num_swaped_students = len(diff_students) - len(students_not_swaped)
     return student_award * num_swaped_students
+
 
 def score_D(df_students, df_limits, minmax_penalty):
     group_count = get_group_change_count(df_students)
@@ -53,6 +55,7 @@ def score_D(df_students, df_limits, minmax_penalty):
 
     return score
 
+
 def score_E(df_students, df_limits, minmax_penalty):
     group_count = get_group_change_count(df_students)
     score = 0
@@ -64,6 +67,7 @@ def score_E(df_students, df_limits, minmax_penalty):
                     score += (count - group['max_preferred']) * minmax_penalty
 
     return score
+
 
 def get_group_change_count(df_students):
     group_count = dict()
@@ -83,7 +87,7 @@ def get_group_change_count(df_students):
     return group_count
 
 
-def valid_studen_count(df_students, df_limits):
+def valid_student_count(df_students, df_limits):
     group_count = get_group_change_count(df_students)
     for group_id, change in group_count.items():
         for _, group in df_limits.iterrows():
@@ -94,8 +98,7 @@ def valid_studen_count(df_students, df_limits):
     print('great')
     return True
 
-def no_overlaps(df_students, df_overlaps):
-    begining = time()
+def no_overlaps(df_students, df_overlaps, gruops_overlaps):
     groups = set()
     dict_group_student = dict()
     for _, student in df_students.iterrows():
@@ -105,37 +108,31 @@ def no_overlaps(df_students, df_overlaps):
             if not student['new_group_id'] in dict_group_student:
                 dict_group_student[student['new_group_id']] = set()
             dict_group_student[student['new_group_id']].add(student['new_group_id'])
-    print('overlap time1: ', time() - begining)
-    begining = time()
-    gruops_overlaps = dict()
-    for _, overlap in df_overlaps.iterrows():
-        if not overlap['group1_id'] in gruops_overlaps:
-            gruops_overlaps[overlap['group1_id']] = set()
-        gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
-    print('overlap time2: ', time() - begining)
-    begining = time()
+
     for group in groups:
         for overlaping_group in gruops_overlaps.get(group, []):
             for student in dict_group_student.get(group, []):
                   if student in dict_group_student.get(overlaping_group, []):
                       return False
-    print('overlap time3: ', time() - begining)
-    begining = time()
+
     print('good')
     return True
 
-def solution_is_valid(df_students, df_limits, df_overlaps):
-    return valid_studen_count(df_students, df_limits) and no_overlaps(df_students, df_overlaps) #should be and
 
-def final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity):
-    if solution_is_valid(df_students, df_limits, df_overlaps):
+def solution_is_valid(df_students, df_limits, df_overlaps, gruops_overlaps):
+    return valid_student_count(df_students, df_limits) and no_overlaps(df_students, df_overlaps, gruops_overlaps)
+
+
+def final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps):
+    if solution_is_valid(df_students, df_limits, df_overlaps, gruops_overlaps):
         print('score: ', max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)]))
         return max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])
     else:
         print('score2: ', 0)
         return 0
 
-#KOMPLIKACIJA ZBOG BRZINE
+
+#  KOMPLIKACIJA ZBOG BRZINE
 def change_df_student(df_students, df_requests, req_to_fulfill):
     students = dict()
     for _, student in df_students.iterrows():
@@ -151,46 +148,47 @@ def change_df_student(df_students, df_requests, req_to_fulfill):
     for _, student in df_students.iterrows():
         student['new_group_id'] = students[(student['student_id'], student['activity_id'])]
 
-def cost_function(df_students, df_limits, df_overlaps, df_requests, minmax_penalty, student_award, award_activity):
+
+def cost_function(df_students, df_limits, df_overlaps, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
     def cost_function_(x):
         change_df_student(df_students, df_requests, x)
-        return 1 / (1 + final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity))
+        return 1 / (1 + final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
     return cost_function_
 
-begining = time()
-df_students = pd.read_csv('C:\\Users\\viktor\\Downloads\\student.csv')
-df_requests = pd.read_csv('C:\\Users\\viktor\\Downloads\\requests.csv')
-df_limits = pd.read_csv('C:\\Users\\viktor\\Downloads\\limits.csv')
-df_overlaps = pd.read_csv('C:\\Users\\viktor\\Downloads\\overlaps.csv')
 
-print(df_students.head())
-print(df_requests.head())
-print(df_limits.head())
-print(df_overlaps.head())
+def main():
+    df_students = pd.read_csv('C:\\Users\\viktor\\Downloads\\student.csv')
+    df_requests = pd.read_csv('C:\\Users\\viktor\\Downloads\\requests.csv')
+    df_limits = pd.read_csv('C:\\Users\\viktor\\Downloads\\limits.csv')
+    df_overlaps = pd.read_csv('C:\\Users\\viktor\\Downloads\\overlaps.csv')
 
-award_activity = [1, 2, 4]
-student_award = 1
-minmax_penalty = 0.1
+    print(df_students.head())
+    print(df_requests.head())
+    print(df_limits.head())
+    print(df_overlaps.head())
 
-print(final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity))
+    award_activity = [1, 2, 4]
+    student_award = 1
+    minmax_penalty = 0.1
+
+    gruops_overlaps = dict()
+    for _, overlap in df_overlaps.iterrows():
+        if not overlap['group1_id'] in gruops_overlaps:
+            gruops_overlaps[overlap['group1_id']] = set()
+        gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
+
+    print(final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps))
+
+    #change_df_student(df_students, df_requests, 'all')
+
+    f = cost_function(df_students, df_limits, df_overlaps, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    rezultat, error = k_turnirski_algoritam(f, broj_gena=len(df_requests), p_mutacije=0.08, broj_iteracija=10**2, epsilon=10**-3)
+    print(rezultat)
+    print(error)
+
+    print(final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
 
-#score_A = sum((student['swap_weight'] for _, student in df_students.iterrows() if student['new_group_id'] != 0))
-
-#change_df_student(df_students, df_requests, 'all')
-
-f = cost_function(df_students, df_limits, df_overlaps, df_requests, minmax_penalty, student_award, award_activity)
-print(time() - begining)
-rezultat, error = k_turnirski_algoritam(f, broj_gena = len(df_requests), p_mutacije=0.08, broj_iteracija=10**2, epsilon=10**-3) #p=0.08, N=[10**3,5*10**3]
-print(rezultat)
-print(error)
-
-print(final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity))
-
-'''
-for _, request in df_requests.iterrows():
-    for _, student in df_students.iterrows(): 
-        if student['student_id'] == request['student_id'] and student['activity_id'] == request['activity_id']:
-            student['new_group_id'] = request['req_group_id']
-'''
+if __name__ == '__main__':
+    main()
