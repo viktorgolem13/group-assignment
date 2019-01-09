@@ -52,5 +52,3 @@ def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_
 
     najbolji = min(populacija, key=f)
     return najbolji, f(najbolji)
-
-        

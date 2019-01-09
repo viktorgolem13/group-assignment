@@ -98,38 +98,48 @@ def valid_student_count(df_students, df_limits):
     print('great')
     return True
 
-def no_overlaps(df_students, df_overlaps, gruops_overlaps):
+
+def no_overlaps(df_students, gruops_overlaps):
     groups = set()
-    dict_group_student = dict()
+    dict_new_group_student = dict()
+    dict_old_group_student = dict()
     for _, student in df_students.iterrows():
         groups.add(student['group_id'])
 
         if student['new_group_id'] != 0:
-            if not student['new_group_id'] in dict_group_student:
-                dict_group_student[student['new_group_id']] = set()
-            dict_group_student[student['new_group_id']].add(student['new_group_id'])
+            if not student['new_group_id'] in dict_new_group_student:
+                dict_new_group_student[student['new_group_id']] = set()
+            dict_new_group_student[student['new_group_id']].add(student['new_group_id'])
+        else:
+            if not student['group_id'] in dict_old_group_student:
+                dict_old_group_student[student['group_id']] = set()
+            dict_old_group_student[student['group_id']].add(student['group_id'])
+
 
     for group in groups:
         for overlaping_group in gruops_overlaps.get(group, []):
-            for student in dict_group_student.get(group, []):
-                  if student in dict_group_student.get(overlaping_group, []):
-                      return False
-
+            for student in dict_new_group_student.get(group, []):
+                if student in dict_new_group_student.get(overlaping_group, []):
+                    print('not good')
+                    return False
+                if student in dict_old_group_student.get(overlaping_group, []):
+                    print('bad')
+                    return False
     print('good')
     return True
 
 
-def solution_is_valid(df_students, df_limits, df_overlaps, gruops_overlaps):
-    return valid_student_count(df_students, df_limits) and no_overlaps(df_students, df_overlaps, gruops_overlaps)
+def solution_is_valid(df_students, df_limits, gruops_overlaps):
+    return valid_student_count(df_students, df_limits) and no_overlaps(df_students, gruops_overlaps)
 
 
-def final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps):
-    if solution_is_valid(df_students, df_limits, df_overlaps, gruops_overlaps):
-        print('score: ', max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)]))
+def final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps):
+    if solution_is_valid(df_students, df_limits, gruops_overlaps):
+        print('cost: ', 1 / (1 + max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])))
         return max([0, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])
     else:
-        print('score2: ', 0)
-        return 0
+        print('cost2: ', 2)
+        return -0.5
 
 
 #  KOMPLIKACIJA ZBOG BRZINE
@@ -149,12 +159,33 @@ def change_df_student(df_students, df_requests, req_to_fulfill):
         student['new_group_id'] = students[(student['student_id'], student['activity_id'])]
 
 
-def cost_function(df_students, df_limits, df_overlaps, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
+def cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
     def cost_function_(x):
         change_df_student(df_students, df_requests, x)
-        return 1 / (1 + final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps))
+        return 1 / (1 + final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
     return cost_function_
+
+
+def clean_df_requests(df_requests, df_students, gruops_overlaps):
+    dict_new_group_student = dict()
+    dict_old_group_student = dict()
+    for _, student in df_students.iterrows():
+        if student['new_group_id'] != 0:
+            if not student['new_group_id'] in dict_new_group_student:
+                dict_new_group_student[student['new_group_id']] = set()
+            dict_new_group_student[student['new_group_id']].add(student['new_group_id'])
+        else:
+            if not student['group_id'] in dict_old_group_student:
+                dict_old_group_student[student['group_id']] = set()
+            dict_old_group_student[student['group_id']].add(student['group_id'])
+
+    for _, request in df_requests.iterrows():
+        for overlaping_group in gruops_overlaps.get(request['req_group_id'], []):
+            if request['student_id'] in dict_new_group_student.get(overlaping_group, []):
+                if True:
+                    pass
+
 
 
 def main():
@@ -170,7 +201,7 @@ def main():
 
     award_activity = [1, 2, 4]
     student_award = 1
-    minmax_penalty = 0.1
+    minmax_penalty = 1
 
     gruops_overlaps = dict()
     for _, overlap in df_overlaps.iterrows():
@@ -178,16 +209,18 @@ def main():
             gruops_overlaps[overlap['group1_id']] = set()
         gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
 
-    print(final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps))
+    clean_df_requests(df_requests, df_students, gruops_overlaps)
+
+    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
     #change_df_student(df_students, df_requests, 'all')
 
-    f = cost_function(df_students, df_limits, df_overlaps, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    f = cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
     rezultat, error = k_turnirski_algoritam(f, broj_gena=len(df_requests), p_mutacije=0.08, broj_iteracija=10**2, epsilon=10**-3)
     print(rezultat)
     print(error)
 
-    print(final_score(df_students, df_limits, df_overlaps, minmax_penalty, student_award, award_activity, gruops_overlaps))
+    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
 
 if __name__ == '__main__':
