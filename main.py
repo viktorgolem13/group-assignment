@@ -2,6 +2,15 @@ import pandas as pd
 #  from genetic_agorithm import *
 from genetic_with_turnament_selection import *
 
+students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
+requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
+limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
+overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
+# students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
+# requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
+# limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
+# overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
+
 
 def score_A(df_students):
     score = 0
@@ -222,10 +231,10 @@ def clean_df_requests(df_requests, df_limits):
 
 
 def main():
-    df_students = pd.read_csv('C:\\Users\\viktor\\Downloads\\student.csv')
-    df_requests = pd.read_csv('C:\\Users\\viktor\\Downloads\\requests.csv')
-    df_limits = pd.read_csv('C:\\Users\\viktor\\Downloads\\limits.csv')
-    df_overlaps = pd.read_csv('C:\\Users\\viktor\\Downloads\\overlaps.csv')
+    df_students = pd.read_csv(students_csv)
+    df_requests = pd.read_csv(requests_csv)
+    df_limits = pd.read_csv(limits_csv)
+    df_overlaps = pd.read_csv(overlaps_csv)
 
     print(df_students.head())
     print(df_requests.head())
