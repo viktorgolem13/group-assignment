@@ -1,10 +1,12 @@
 from random import randint, random
 
+
 def stvori_populaciju(velicina_populacije, broj_gena):
+    return [[randint(0, 1) for _ in range(broj_gena)] for _ in range(velicina_populacije)]
 
-    return [[randint(0, 1) for i in range(broj_gena)] for j in range(velicina_populacije)]
 
-def stvori_populaciju2(velicina_populacije, broj_gena, p_ones = 10**-3):
+def stvori_populaciju2(velicina_populacije, broj_gena, expected_num_of_ones=20):
+    p_ones = expected_num_of_ones / broj_gena
 
     populacija = []
     for i in range(velicina_populacije):
@@ -22,7 +24,6 @@ def stvori_populaciju2(velicina_populacije, broj_gena, p_ones = 10**-3):
 
         
 def krizanje(x, y):
-
     tocka_krizanja = randint(1, len(x) - 1)
     nova_tocka = []
     for i in range(tocka_krizanja):
@@ -32,6 +33,7 @@ def krizanje(x, y):
         nova_tocka.append(y[j])
 
     return nova_tocka
+
 
 def mutacija(populacija, p_mutacije):
     p_m_gena = p_mutacije / len(populacija[0])

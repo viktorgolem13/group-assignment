@@ -147,14 +147,33 @@ def solution_is_valid(df_students, df_limits, gruops_overlaps):
     return valid_student_count(df_students, df_limits) and no_overlaps(df_students, gruops_overlaps)
 
 
+#  returns score if score is valid and None otherwise
 def final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps):
     if solution_is_valid(df_students, df_limits, gruops_overlaps):
-        print('cost: ', 1 / (1 + max([-0.1, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])))
-        return max([-0.1, score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award)
-                    - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)])
+        return score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - \
+               score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)
     else:
-        print('cost2: ', 2)
-        return -0.5
+        return None
+
+
+def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
+    def cost_function_(x):
+        df_students = df_students_original.copy()
+        change_df_student(df_students, df_requests, x)
+        score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+        if score is None:
+            cost = 2
+            novi_x = stvori_jedinku(len(x))
+            for i in range(len(x)):
+                x[i] = novi_x[i]
+        elif score < 0:
+            cost = 1.5
+        else:
+            cost = 1 / (1 + score)
+
+        print('cost: ', cost)
+        return cost
+    return cost_function_
 
 
 #  KOMPLIKACIJA ZBOG BRZINE
@@ -179,7 +198,7 @@ def change_df_student(df_students, df_requests, req_to_fulfill):
 def stvori_jedinku(broj_gena, p_ones=None):
 
     if p_ones is None:
-        p_ones = 4 / broj_gena
+        p_ones = 20 / broj_gena
 
     tocka = []
     for j in range(broj_gena):
@@ -190,19 +209,6 @@ def stvori_jedinku(broj_gena, p_ones=None):
             tocka.append(0)
 
     return tocka
-
-
-def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
-    def cost_function_(x):
-        df_students = df_students_original.copy()
-        change_df_student(df_students, df_requests, x)
-        score = 1 / (1 + final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
-        if score == 2:
-            novi_x = stvori_jedinku(len(x))
-            for i in range(len(x)):
-                x[i] = novi_x[i]
-        return score
-    return cost_function_
 
 
 def clean_df_requests(df_requests, df_limits):
@@ -228,6 +234,30 @@ def clean_df_requests(df_requests, df_limits):
     print(len(df_requests))
 
     return df_requests
+
+
+def test_cost():
+    df_students = pd.read_csv(students_csv)
+    df_requests = pd.read_csv(requests_csv)
+    df_limits = pd.read_csv(limits_csv)
+    df_overlaps = pd.read_csv(overlaps_csv)
+
+    award_activity = [1, 2, 4]
+    student_award = 1
+    minmax_penalty = 1
+
+    gruops_overlaps = dict()
+    for _, overlap in df_overlaps.iterrows():
+        if not overlap['group1_id'] in gruops_overlaps:
+            gruops_overlaps[overlap['group1_id']] = set()
+        gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
+
+    f = cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity,
+                      gruops_overlaps)
+
+    x = [1] * len(df_requests)
+    print(f(x))
+    print(x)
 
 
 def main():

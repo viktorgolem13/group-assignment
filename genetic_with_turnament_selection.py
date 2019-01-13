@@ -1,6 +1,7 @@
 from genetic_algorithm_functions import *
 
-#vraca indekse sudionika
+
+#  vraca indekse sudionika
 def izaberi_sudionike(velicina_populacije, k):
     j = 0
     sudionici = []
@@ -11,11 +12,12 @@ def izaberi_sudionike(velicina_populacije, k):
             j += 1
     return sudionici
 
-#f je funkcija koju minimiziramo
-def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_gena = 5, min_element=-4, max_element=4, 
-                                                                        broj_iteracija=10**4, epsilon=10**-4, ispisuj=False):
 
-    def napravi_f_index(f, populacija):
+#  f je funkcija koju minimiziramo
+def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_gena=5, broj_iteracija=10**4,
+                          epsilon=10**-4, ispisuj=False):
+
+    def napravi_f_index():
         def f_index_(i):
             return f(populacija[i])
 
@@ -28,7 +30,7 @@ def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_
 
     for i in range(broj_iteracija):
         print('index', i)
-        f_index = napravi_f_index(f, populacija)
+        f_index = napravi_f_index()
         sudionici = izaberi_sudionike(velicina_populacije, k)
         najgori = max(sudionici, key=f_index)
 
@@ -43,7 +45,7 @@ def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_
         novi = mutacija([novi], p_mutacije)[0]
         populacija[najgori] = novi
 
-        if ispisuj and i % 10 == 0:
+        if ispisuj and i % 100 == 0 and i != 0:
             for p in populacija:
                 print(p)
             najbolji = min(populacija, key=f)
