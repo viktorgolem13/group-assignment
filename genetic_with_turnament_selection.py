@@ -27,9 +27,10 @@ def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_
     populacija = stvori_populaciju2(velicina_populacije, broj_gena)
 
     for i in range(broj_iteracija):
+        print('index', i)
         f_index = napravi_f_index(f, populacija)
         sudionici = izaberi_sudionike(velicina_populacije, k)
-        najgori = max(sudionici, key = f_index)
+        najgori = max(sudionici, key=f_index)
 
         if k == 3:
             prvi, drugi = [populacija[sudionik] for sudionik in sudionici if sudionik != najgori]
@@ -42,11 +43,13 @@ def k_turnirski_algoritam(f, velicina_populacije=50, p_mutacije=0.01, k=3, broj_
         novi = mutacija([novi], p_mutacije)[0]
         populacija[najgori] = novi
 
-        if ispisuj and i % 1000 == 0:
+        if ispisuj and i % 10 == 0:
+            for p in populacija:
+                print(p)
             najbolji = min(populacija, key=f)
-            print(f(najbolji))
+            print('najbolji', f(najbolji))
 
-        if epsilon and i % 1000 == 0 and f(populacija[0]) < epsilon:
+        if epsilon and i % 100 == 0 and f(populacija[0]) < epsilon:
             najbolji = min(populacija, key=f)
             return najbolji, f(najbolji)
 

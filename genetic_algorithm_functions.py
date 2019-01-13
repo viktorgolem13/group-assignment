@@ -4,7 +4,7 @@ def stvori_populaciju(velicina_populacije, broj_gena):
 
     return [[randint(0, 1) for i in range(broj_gena)] for j in range(velicina_populacije)]
 
-def stvori_populaciju2(velicina_populacije, broj_gena, p_ones = 10**-4):
+def stvori_populaciju2(velicina_populacije, broj_gena, p_ones = 10**-3):
 
     populacija = []
     for i in range(velicina_populacije):
