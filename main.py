@@ -1,15 +1,16 @@
 import pandas as pd
 #  from genetic_agorithm import *
 from genetic_with_turnament_selection import *
+from tabu_search import *
 
-students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
-requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
-limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
-overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
-# students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
-# requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
-# limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
-# overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
+# students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
+# requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
+# limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
+# overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
+students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
+requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
+limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
+overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
 
 
 def score_A(df_students):
@@ -161,13 +162,18 @@ def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, 
         df_students = df_students_original.copy()
         change_df_student(df_students, df_requests, x)
         score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
-        if score is None:
+        if x is None:   # u tabu listi je onda
+            cost = 2
+
+        elif score is None:
             cost = 2
             novi_x = stvori_jedinku(len(x))
             for i in range(len(x)):
                 x[i] = novi_x[i]
+
         elif score < 0:
             cost = 1.5
+
         else:
             cost = 1 / (1 + score)
 
@@ -299,5 +305,43 @@ def main():
     print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
 
+def main_tabu():
+    df_students = pd.read_csv(students_csv)
+    df_requests = pd.read_csv(requests_csv)
+    df_limits = pd.read_csv(limits_csv)
+    df_overlaps = pd.read_csv(overlaps_csv)
+
+    print(df_students.head())
+    print(df_requests.head())
+    print(df_limits.head())
+    print(df_overlaps.head())
+
+    award_activity = [1, 2, 4]
+    student_award = 1
+    minmax_penalty = 1
+
+    gruops_overlaps = dict()
+    for _, overlap in df_overlaps.iterrows():
+        if not overlap['group1_id'] in gruops_overlaps:
+            gruops_overlaps[overlap['group1_id']] = set()
+        gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
+
+    df_requests = clean_df_requests(df_requests, df_limits)
+    print('len_req ', len(df_requests))
+
+    print('starting score: ', score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award)
+                    - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty))
+    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+
+    #change_df_student(df_students, df_requests, 'all')
+
+    f = cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    rezultat, error = tabu_search(f, neighborhood_size=len(df_requests), tabu_tenure=20, solution_size=len(df_requests), no_of_iterations=10, print_progress=True)
+    print(rezultat)
+    print(error)
+
+    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+
+
 if __name__ == '__main__':
-    main()
+    main_tabu()
