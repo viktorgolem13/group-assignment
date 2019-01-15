@@ -2,15 +2,17 @@ import pandas as pd
 #  from genetic_agorithm import *
 from genetic_with_turnament_selection import *
 from tabu_search import *
+import argparse
 
-students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
-requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
-limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
-overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
-#  students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
-#  requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
-#  limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
-#  overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
+
+# students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
+# requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
+# limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
+# overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
+students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
+requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
+limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
+overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
 
 
 def score_A(df_students):
@@ -419,5 +421,64 @@ def main_tabu():
     df_students.to_csv('rjesenje')
 
 
+def main_tabu_with_arguments():
+    ###
+    parser_of_args = argparse.ArgumentParser(description="Run tabu search alg")
+    parser_of_args.add_argument('-timeout', type=str, help='h')
+    parser_of_args.add_argument('-award-activity', type=str, help='h')
+    parser_of_args.add_argument('-award-student', type=str, help='h')
+    parser_of_args.add_argument('-minmax-penalty', type=str, help='h')
+    parser_of_args.add_argument('-students-file', type=str, help='h')
+    parser_of_args.add_argument('-requests-file', type=str, help='h')
+    parser_of_args.add_argument('-overlaps-file', type=str, help='h')
+    parser_of_args.add_argument('-limits-file', type=str, help='h')
+    args = parser_of_args.parse_args()
+    ###
+
+    df_students = pd.read_csv(args.students_file)
+    df_requests = pd.read_csv(args.requests_file)
+    df_limits = pd.read_csv(args.limits_file)
+    df_overlaps = pd.read_csv(args.overlaps_file)
+
+    print(df_students.head())
+    print(df_requests.head())
+    print(df_limits.head())
+    print(df_overlaps.head())
+
+    award_activity = list(args.award_activity.split(','))
+    award_activity = [int(bb) for bb in award_activity]
+    student_award = int(args.award_student)
+    minmax_penalty = int(args.minmax_penalty)
+    timeout = int(args.timeout)
+
+    gruops_overlaps = dict()
+    for _, overlap in df_overlaps.iterrows():
+        if not overlap['group1_id'] in gruops_overlaps:
+            gruops_overlaps[overlap['group1_id']] = set()
+        gruops_overlaps[overlap['group1_id']].add(overlap['group2_id'])
+
+    df_requests = clean_df_requests(df_requests, df_limits)
+    print('len_req ', len(df_requests))
+
+    starting_score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    print('starting score: ', starting_score)
+
+    #change_df_student(df_students, df_requests, 'all')
+
+    f = cost_function_tabu(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity,
+                           gruops_overlaps, starting_score)
+    print(len(df_requests))
+    rezultat, error = tabu_search(f, max_neighborhood_size=30, tabu_tenure=14, solution_size=len(df_requests),
+                                  no_of_iterations=5, print_progress=True)
+    print(rezultat)
+    print(error)
+
+    change_df_student(df_students, df_requests, rezultat)
+
+    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+
+    df_students.to_csv('rjesenje')
+
+
 if __name__ == '__main__':
-    main_tabu()
+    main_tabu_with_arguments()
