@@ -45,6 +45,8 @@ def create_neighborhood_subset(s, tabu_list, last_chosen_s, subset_size,
         lower_bound = round(last_chosen_s - subset_size/2)
         upper_bound = round(last_chosen_s + subset_size/2)
 
+    print('last_chosen_s, lower bound, upper bound', last_chosen_s, lower_bound, upper_bound)
+
     for i in range(lower_bound, upper_bound):
         new_s = s.copy()
         new_s[i] = 1 - s[i]
