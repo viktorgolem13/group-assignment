@@ -1,7 +1,7 @@
 from random import randint, random
 
 
-def initial_solution(size, p_ones=10**-4):
+def initial_solution(size, p_ones=10**-3):
 
     value = []
     for j in range(size):

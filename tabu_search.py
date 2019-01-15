@@ -3,13 +3,15 @@ from collections import deque
 from random import randint, random
 
 
-def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_iterations=10 ** 4, print_progress=True):
+def tabu_search(f, max_neighborhood_size=50, min_neighborhood_size=10, tabu_tenure=3, solution_size=5, no_of_iterations=10 ** 4, print_progress=True):
     """f is the function which we're minimizing"""
 
     def make_f_index(f, populacija):
         def f_index_(i):
             return f(populacija[i])
         return f_index_
+
+    neighborhood_size = max([min_neighborhood_size, tabu_tenure])
 
     if tabu_tenure > neighborhood_size or tabu_tenure < 3:
         return
@@ -32,8 +34,11 @@ def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_i
                                                                                   # list and aspiration criterion
 
         f_index = make_f_index(f, N)
+        if neighborhood_size < max_neighborhood_size:
+            neighborhood_size += 1
 
-        s_new, s_new_f, s_index = tsu.find_new_solution_subset(N, f_index, f)
+        s_new, s_new_f, _ = tsu.find_new_solution_subset(N, f_index, f)
+        s_index = randint(0, solution_size)
 
         s = s_new
         if s_new_f < s_best_f:

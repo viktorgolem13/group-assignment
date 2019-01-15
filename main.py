@@ -3,14 +3,14 @@ import pandas as pd
 from genetic_with_turnament_selection import *
 from tabu_search import *
 
-# students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
-# requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
-# limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
-# overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
-students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
-requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
-limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
-overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
+students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
+requests_csv = 'C:\\Users\\viktor\\Downloads\\requests.csv'
+limits_csv = 'C:\\Users\\viktor\\Downloads\\limits.csv'
+overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
+#  students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
+#  requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
+#  limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
+#  overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
 
 
 def score_A(df_students):
@@ -63,6 +63,12 @@ def score_D(df_students, df_limits, minmax_penalty):
                 if count < group['min_preferred']:
                     score += (group['min_preferred'] - count) * minmax_penalty
 
+    for _, group in df_limits.iterrows():
+        if not group['group_id'] in group_count:
+            count = group['students_cnt']
+            if count < group['min_preferred']:
+                score += (group['min_preferred'] - count) * minmax_penalty
+
     return score
 
 
@@ -75,6 +81,13 @@ def score_E(df_students, df_limits, minmax_penalty):
                 count = change + group['students_cnt'] 
                 if count > group['max_preferred']:
                     score += (count - group['max_preferred']) * minmax_penalty
+
+    for _, group in df_limits.iterrows():
+        if not group['group_id'] in group_count:
+
+            count = group['students_cnt']
+            if count > group['max_preferred']:
+                score += (count - group['max_preferred']) * minmax_penalty
 
     return score
 
@@ -157,27 +170,30 @@ def final_score(df_students, df_limits, minmax_penalty, student_award, award_act
         return None
 
 
-def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
+def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity,
+                  gruops_overlaps, starting_score):
     def cost_function_(x):
         df_students = df_students_original.copy()
         change_df_student(df_students, df_requests, x)
         score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+        print('s ', score)
         if score is None:
             cost = 2
             novi_x = stvori_jedinku(len(x))
             for i in range(len(x)):
                 x[i] = novi_x[i]
-        elif score < 0:
+        elif score < starting_score:
             cost = 1.5
         else:
-            cost = 1 / (1 + score)
+            cost = 1 / (1 + score - starting_score)
 
         print('cost: ', cost)
         return cost
     return cost_function_
 
 
-def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
+def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity,
+                       gruops_overlaps, starting_score):
     def cost_function_tabu_(x):
 
         if x is None:   # u tabu listi je onda
@@ -187,6 +203,8 @@ def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_pena
         df_students = df_students_original.copy()
         change_df_student(df_students, df_requests, x)
         score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+        if score is not None:
+            adjusted_score = score - starting_score
 
         if score is None:
             cost = 2
@@ -194,11 +212,11 @@ def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_pena
             for i in range(len(x)):
                 x[i] = novi_x[i]
 
-        elif score < 0:
+        elif adjusted_score < 0:
             cost = 1.5
 
         else:
-            cost = 1 / (1 + score)
+            cost = 1 / (1 + adjusted_score)
 
         print('cost: ', cost)
         return cost
@@ -313,13 +331,13 @@ def main():
     df_requests = clean_df_requests(df_requests, df_limits)
     print('len_req ', len(df_requests))
 
-    print('starting score: ', score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award)
-                    - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty))
-    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+    starting_score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    print('starting score: ', starting_score)
 
     #change_df_student(df_students, df_requests, 'all')
 
-    f = cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    f = cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity,
+                      gruops_overlaps, starting_score)
     rezultat, error = k_turnirski_algoritam(f, broj_gena=len(df_requests), p_mutacije=0.08, broj_iteracija=10**2,
                                             epsilon=10**-3, ispisuj=True)
     print(rezultat)
@@ -352,14 +370,15 @@ def main_tabu():
     df_requests = clean_df_requests(df_requests, df_limits)
     print('len_req ', len(df_requests))
 
-    print('starting score: ', score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award)
-                    - score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty))
-    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+    starting_score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    print('starting score: ', starting_score)
 
     #change_df_student(df_students, df_requests, 'all')
 
-    f = cost_function_tabu(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
-    rezultat, error = tabu_search(f, neighborhood_size=26, tabu_tenure=14, solution_size=len(df_requests),
+    f = cost_function_tabu(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity,
+                           gruops_overlaps, starting_score)
+    print(len(df_requests))
+    rezultat, error = tabu_search(f, max_neighborhood_size=30, tabu_tenure=14, solution_size=len(df_requests),
                                   no_of_iterations=10, print_progress=True)
     print(rezultat)
     print(error)
