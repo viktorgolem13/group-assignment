@@ -20,6 +20,7 @@ def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_i
     tabu_list = deque(maxlen=tabu_tenure)
 
     s_index = randint(0, solution_size)
+    beginning_phase = True
 
     # TODO Initialize aspiration criterion (AC)
     # TODO Initialize other memory structures(e.g. long -term) if any;
@@ -46,5 +47,18 @@ def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_i
 
         if print_progress:
             print('> Iteration: {} - current solution: {} - best score: {}'.format(i, s_new_f, s_best_f))
+
+        if beginning_phase and s_best_f == 1.5:  # ako nije nadjeno neko okay u 1.iter, probaj ponovo cili alg
+            print('.. restarting ..')
+            s = tsu.initial_solution(solution_size, p_ones=10 ** -4)
+            s_best = s
+            s_best_f = f(s_best)
+            tabu_list = deque(maxlen=tabu_tenure)
+
+             s_index = randint(0, solution_size)
+            beginning_phase = True
+
+         else:
+            beginning_phase = False
 
     return s_best, s_best_f
