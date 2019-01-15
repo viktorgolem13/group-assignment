@@ -14,22 +14,25 @@ overlaps_csv = 'C:\\Users\\viktor\\Downloads\\overlaps.csv'
 
 
 def score_A(df_students):
+    #t = time()
     score = 0
     for _, student in df_students.iterrows():
         if student['new_group_id'] != 0:
             score += student['swap_weight']
-
+    #print('t_A ', time() - t)
     return score
 
 
 def score_B(df_students, award_activity):
+    #t = time()
     students_swaped = dict()
     for _, student in df_students.iterrows():
         if student['new_group_id'] != 0:
-            if student['student_id'] in students_swaped:
-                students_swaped[student['student_id']] += 1
+            student_new_group_id = student['student_id']
+            if student_new_group_id in students_swaped:
+                students_swaped[student_new_group_id] += 1
             else:
-                students_swaped[student['student_id']] = 1
+                students_swaped[student_new_group_id] = 1
 
     score = 0
     for _, value in students_swaped.items():
@@ -37,58 +40,71 @@ def score_B(df_students, award_activity):
             score += award_activity[value - 1] #index 0 is for 1 swap
         except IndexError:
             score += award_activity[-1]
-
+    #print('t_B ', time() - t)
     return score
 
 
 def score_C(df_students, student_award):
+    #t = time()
     students_not_swaped = set()
     diff_students = set()
     for _, student in df_students.iterrows():
-        diff_students.add(student['new_group_id'])
-        if student['new_group_id'] == 0:
-            students_not_swaped.add(student['new_group_id'])
+        student_new_group_id = student['new_group_id']
+        diff_students.add(student_new_group_id)
+        if student_new_group_id == 0:
+            students_not_swaped.add(student_new_group_id)
 
     num_swaped_students = len(diff_students) - len(students_not_swaped)
+    #print('t_C ', time() - t)
     return student_award * num_swaped_students
 
 
 def score_D(df_students, df_limits, minmax_penalty):
+    #t = time()
     group_count = get_group_change_count(df_students)
     score = 0
     for group_id, change in group_count.items():
         for _, group in df_limits.iterrows():
             if group['group_id'] == group_id:
-                count = change + group['students_cnt'] 
-                if count < group['min_preferred']:
-                    score += (group['min_preferred'] - count) * minmax_penalty
-
+                group_student_cnt = group['students_cnt']
+                group_min_preferred = group['min_preferred']
+                count = change + group_student_cnt
+                if count < group_min_preferred:
+                    score += (group_min_preferred - count) * minmax_penalty
+                if group_student_cnt < group_min_preferred:
+                    score -= (group_min_preferred - count) * minmax_penalty #this will be added later
+    #print('t_D_1 ', time() - t)
+    #t = time()
     for _, group in df_limits.iterrows():
-        if not group['group_id'] in group_count:
-            count = group['students_cnt']
-            if count < group['min_preferred']:
-                score += (group['min_preferred'] - count) * minmax_penalty
-
+        count = group['students_cnt']
+        group_min_preferred = group['min_preferred']
+        if count < group_min_preferred:
+            score += (group_min_preferred - count) * minmax_penalty
+    #print('t_D ', time() - t)
     return score
 
 
 def score_E(df_students, df_limits, minmax_penalty):
+    #t = time()
     group_count = get_group_change_count(df_students)
     score = 0
     for group_id, change in group_count.items():
         for _, group in df_limits.iterrows():
             if group['group_id'] == group_id:
-                count = change + group['students_cnt'] 
-                if count > group['max_preferred']:
-                    score += (count - group['max_preferred']) * minmax_penalty
+                group_student_cnt = group['students_cnt']
+                group_max_preferred = group['max_preferred']
+                count = change + group_student_cnt
+                if count > group_max_preferred:
+                    score += (count - group_max_preferred) * minmax_penalty
+                if group_student_cnt > group_max_preferred:
+                    score -= (count - group_max_preferred) * minmax_penalty #this will be added later
 
     for _, group in df_limits.iterrows():
-        if not group['group_id'] in group_count:
-
-            count = group['students_cnt']
-            if count > group['max_preferred']:
-                score += (count - group['max_preferred']) * minmax_penalty
-
+        count = group['students_cnt']
+        group_max_preferred = group['max_preferred']
+        if count > group_max_preferred:
+            score += (count - group_max_preferred) * minmax_penalty
+    #print('t_E ', time() - t)
     return score
 
 
@@ -163,10 +179,16 @@ def solution_is_valid(df_students, df_limits, gruops_overlaps):
 
 #  returns score if score is valid and None otherwise
 def final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps):
+    #t = time()
     if solution_is_valid(df_students, df_limits, gruops_overlaps):
-        return score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - \
+        #print('t1 ', time() - t)
+        #t = time()
+        score = score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - \
                score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)
+        #print('t2 ', time() - t)
+        return score
     else:
+        #print('t0 ', time() - t)
         return None
 
 
@@ -195,14 +217,20 @@ def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, 
 def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity,
                        gruops_overlaps, starting_score):
     def cost_function_tabu_(x):
-
+        #  t = time()
         if x is None:   # u tabu listi je onda
             cost = 2
             return cost
 
         df_students = df_students_original.copy()
+        #  print('t0 ', time() - t)
+        #  t = time()
         change_df_student(df_students, df_requests, x)
+        #  print('t1 ', time() - t)
+        #  t = time()
         score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+        #  print('t2 ', time() - t)
+        #  t = time()
         if score is not None:
             adjusted_score = score - starting_score
 
@@ -219,6 +247,7 @@ def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_pena
             cost = 1 / (1 + adjusted_score)
 
         print('cost: ', cost)
+        #  print('t3 ', time() - t)
         return cost
     return cost_function_tabu_
 
@@ -379,11 +408,15 @@ def main_tabu():
                            gruops_overlaps, starting_score)
     print(len(df_requests))
     rezultat, error = tabu_search(f, max_neighborhood_size=30, tabu_tenure=14, solution_size=len(df_requests),
-                                  no_of_iterations=10, print_progress=True)
+                                  no_of_iterations=5, print_progress=True)
     print(rezultat)
     print(error)
 
+    change_df_student(df_students, df_requests, rezultat)
+
     print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+
+    df_students.to_csv('rjesenje')
 
 
 if __name__ == '__main__':

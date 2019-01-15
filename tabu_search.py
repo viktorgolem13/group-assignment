@@ -1,6 +1,7 @@
 import tabu_search_utils as tsu
 from collections import deque
 from random import randint, random
+from time import time
 
 
 def tabu_search(f, max_neighborhood_size=50, min_neighborhood_size=10, tabu_tenure=3, solution_size=5, no_of_iterations=10 ** 4, print_progress=True):
@@ -28,7 +29,6 @@ def tabu_search(f, max_neighborhood_size=50, min_neighborhood_size=10, tabu_tenu
     # TODO Initialize other memory structures(e.g. long -term) if any;
 
     for i in range(no_of_iterations):
-
         N = tsu.create_neighborhood_subset(s, tabu_list, last_chosen_s=s_index, subset_size=neighborhood_size,
                                                     aspiration_crit=None)         # neighborhood subject to tabu
                                                                                   # list and aspiration criterion
