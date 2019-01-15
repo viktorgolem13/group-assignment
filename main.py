@@ -159,6 +159,26 @@ def final_score(df_students, df_limits, minmax_penalty, student_award, award_act
 
 def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
     def cost_function_(x):
+        df_students = df_students_original.copy()
+        change_df_student(df_students, df_requests, x)
+        score = final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps)
+        if score is None:
+            cost = 2
+            novi_x = stvori_jedinku(len(x))
+            for i in range(len(x)):
+                x[i] = novi_x[i]
+        elif score < 0:
+            cost = 1.5
+        else:
+            cost = 1 / (1 + score)
+
+        print('cost: ', cost)
+        return cost
+    return cost_function_
+
+
+def cost_function_tabu(df_students_original, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps):
+    def cost_function_tabu_(x):
 
         if x is None:   # u tabu listi je onda
             cost = 2
@@ -182,7 +202,7 @@ def cost_function(df_students_original, df_limits, df_requests, minmax_penalty, 
 
         print('cost: ', cost)
         return cost
-    return cost_function_
+    return cost_function_tabu_
 
 
 #  KOMPLIKACIJA ZBOG BRZINE
@@ -338,8 +358,8 @@ def main_tabu():
 
     #change_df_student(df_students, df_requests, 'all')
 
-    f = cost_function(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
-    rezultat, error = tabu_search(f, neighborhood_size=80, tabu_tenure=20, solution_size=len(df_requests), no_of_iterations=10, print_progress=True)
+    f = cost_function_tabu(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
+    rezultat, error = tabu_search(f, neighborhood_size=10, tabu_tenure=4, solution_size=len(df_requests), no_of_iterations=10, print_progress=True)
     print(rezultat)
     print(error)
 
