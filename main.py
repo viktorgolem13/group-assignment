@@ -359,7 +359,7 @@ def main_tabu():
     #change_df_student(df_students, df_requests, 'all')
 
     f = cost_function_tabu(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity, gruops_overlaps)
-    rezultat, error = tabu_search(f, neighborhood_size=10, tabu_tenure=4, solution_size=len(df_requests), no_of_iterations=10, print_progress=True)
+    rezultat, error = tabu_search(f, neighborhood_size=16, tabu_tenure=6, solution_size=len(df_requests), no_of_iterations=10, print_progress=True)
     print(rezultat)
     print(error)
 

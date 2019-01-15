@@ -1,6 +1,6 @@
 import tabu_search_utils as tsu
 from collections import deque
-import random
+from random import randint, random
 
 
 def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_iterations=10 ** 4, print_progress=True):
@@ -19,7 +19,7 @@ def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_i
     s_best_f = f(s_best)
     tabu_list = deque(maxlen=tabu_tenure)
 
-    s_index = random.randint(0, solution_size)
+    s_index = randint(0, solution_size)
 
     # TODO Initialize aspiration criterion (AC)
     # TODO Initialize other memory structures(e.g. long -term) if any;
@@ -45,6 +45,6 @@ def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_i
         # TODO If intesification or diversification criterion, then intesify or diversify search;
 
         if print_progress:
-            print('> Iteration: {} - best score: {}'.format(i, s_best_f))
+            print('> Iteration: {} - current solution: {} - best score: {}'.format(i, s_new_f, s_best_f))
 
     return s_best, s_best_f
