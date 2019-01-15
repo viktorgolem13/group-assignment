@@ -481,4 +481,4 @@ def main_tabu_with_arguments():
 
 
 if __name__ == '__main__':
-    main_tabu_with_arguments()
+    main_tabu()
