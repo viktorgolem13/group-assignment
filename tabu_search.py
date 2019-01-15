@@ -55,7 +55,7 @@ def tabu_search(f, neighborhood_size=50, tabu_tenure=3, solution_size=5, no_of_i
             s_best_f = f(s_best)
             tabu_list = deque(maxlen=tabu_tenure)
 
-             s_index = randint(0, solution_size)
+            s_index = randint(0, solution_size)
             beginning_phase = True
 
          else:
