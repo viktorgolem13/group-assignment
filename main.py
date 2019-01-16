@@ -494,13 +494,14 @@ def main_tabu_with_arguments():
 
     change_df_student(df_students, df_requests, rezultat)
 
-    print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
+    print('FINAL_FJA_CILJA', final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
     df_students.to_csv(str('students_done' + str(timeout) + '.csv'))
     convert_zeors_for_nonmoved(df_students)
-    df_students.to_csv(str('students_done_nozeros' + str(timeout) + '.csv'))
+    df_students.to_csv(str('students_done_nozeros_' + args.students_file.split('/')[5] + '_' + str(timeout) + '.csv'))
+    print('TIMEOUT', timeout)
+    print('INSTANCA', args.students_file.split('/')[5])
     print('NO_OF_EVALS', NO_OF_EVALUATIONS)
-    print('FINAL_FJA_CILJA', final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
 
 if __name__ == '__main__':
