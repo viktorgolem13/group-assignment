@@ -3,6 +3,7 @@ import pandas as pd
 from genetic_with_turnament_selection import *
 from tabu_search import *
 import argparse
+import time
 
 
 # students_csv = 'C:\\Users\\viktor\\Downloads\\student.csv'
@@ -13,6 +14,8 @@ students_csv = '/home/interferon/Documents/hmo/instanca2/student[1].csv'
 requests_csv = '/home/interferon/Documents/hmo/instanca2/requests[1].csv'
 limits_csv = '/home/interferon/Documents/hmo/instanca2/limits[1].csv'
 overlaps_csv = '/home/interferon/Documents/hmo/instanca2/overlaps[1].csv'
+
+NO_OF_EVALUATIONS = 0
 
 
 def score_A(df_students):
@@ -181,12 +184,17 @@ def solution_is_valid(df_students, df_limits, gruops_overlaps):
 
 #  returns score if score is valid and None otherwise
 def final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps):
+    global NO_OF_EVALUATIONS
+
     #t = time()
     if solution_is_valid(df_students, df_limits, gruops_overlaps):
         #print('t1 ', time() - t)
         #t = time()
         score = score_A(df_students) + score_B(df_students, award_activity) + score_C(df_students, student_award) - \
                score_D(df_students, df_limits, minmax_penalty) - score_E(df_students, df_limits, minmax_penalty)
+
+        NO_OF_EVALUATIONS += 1
+
         #print('t2 ', time() - t)
         return score
     else:
@@ -421,7 +429,14 @@ def main_tabu():
     df_students.to_csv('rjesenje')
 
 
+def convert_zeors_for_nonmoved(df_students):
+    for index, row in df_students.iterrows():
+        if row['new_group_id'] == 0:
+            row['new_group_id'] = row['group_id']
+
+
 def main_tabu_with_arguments():
+    global NO_OF_EVALUATIONS
     ###
     parser_of_args = argparse.ArgumentParser(description="Run tabu search alg")
     parser_of_args.add_argument('-timeout', type=str, help='h')
@@ -434,6 +449,8 @@ def main_tabu_with_arguments():
     parser_of_args.add_argument('-limits-file', type=str, help='h')
     args = parser_of_args.parse_args()
     ###
+
+    program_start_time = time.time()
 
     df_students = pd.read_csv(args.students_file)
     df_requests = pd.read_csv(args.requests_file)
@@ -468,17 +485,23 @@ def main_tabu_with_arguments():
     f = cost_function_tabu(df_students, df_limits, df_requests, minmax_penalty, student_award, award_activity,
                            gruops_overlaps, starting_score)
     print(len(df_requests))
-    rezultat, error = tabu_search(f, max_neighborhood_size=30, tabu_tenure=14, solution_size=len(df_requests),
+    rezultat, rezultat_f = tabu_search(f, program_start_time, timeout, max_neighborhood_size=30, tabu_tenure=14, solution_size=len(df_requests),
                                   no_of_iterations=5, print_progress=True)
-    print(rezultat)
-    print(error)
+
+    print('rezultat', rezultat)
+    print('rezultat_f', rezultat_f)
+    print('rezultat_f', rezultat_f)
 
     change_df_student(df_students, df_requests, rezultat)
 
     print(final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
-    df_students.to_csv('rjesenje')
+    df_students.to_csv(str('students_done' + str(timeout) + '.csv'))
+    convert_zeors_for_nonmoved(df_students)
+    df_students.to_csv(str('students_done_nozeros' + str(timeout) + '.csv'))
+    print('NO_OF_EVALS', NO_OF_EVALUATIONS)
+    print('FINAL_FJA_CILJA', final_score(df_students, df_limits, minmax_penalty, student_award, award_activity, gruops_overlaps))
 
 
 if __name__ == '__main__':
-    main_tabu()
+    main_tabu_with_arguments()
